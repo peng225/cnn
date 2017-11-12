@@ -20,9 +20,9 @@ DEPS = $(OBJS:.o=.d)
 INCLUDE = -I $(INC_DIR)
 
 # for test
-TEST_CFLAGS = -c -g -Wall -std=c++14 -flto -MMD -MP
-TEST_FINAL_CFLAGS = -g -Wall -std=c++14 -flto
-TEST_LDLIBS = -lgtest_main
+TEST_CFLAGS = -c -g -Wall -std=c++14 -MMD -MP
+TEST_FINAL_CFLAGS = -g -Wall -std=c++14
+TEST_LDLIBS = gtest_main.a -lpthread -pthread
 
 TEST_TARGET = test_main
 
@@ -53,7 +53,7 @@ $(TARGET): $(OBJS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@if [ ! -e $(OBJ_DIR) ] ; then mkdir $(OBJ_DIR) ; fi
-	$(CC) $(INCLUDE) -o $@ $< $(CFLAGS) $(LDLIBS)
+	$(CC) $(INCLUDE) -o $@ $< $(CFLAGS)
 
 # for test
 test: $(TEST_TARGET)
@@ -71,7 +71,7 @@ $(TEST_TARGET): $(TEST_OBJS) $(OBJS_WITHOUT_MAIN)
 
 $(TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.cpp
 	@if [ ! -e $(TEST_OBJ_DIR) ] ; then mkdir $(TEST_OBJ_DIR) ; fi
-	$(CC) $(TEST_INCLUDE) $(INCLUDE) -o $@ $< $(TEST_CFLAGS) $(TEST_LDLIBS)
+	$(CC) $(TEST_INCLUDE) $(INCLUDE) -o $@ $< $(TEST_CFLAGS)
 
 clean:
 	rm -f $(TARGET) $(OBJ_DIR)/* $(SRC_DIR)/*~ $(INC_DIR)/*~ $(TEST_TARGET) $(TEST_OBJ_DIR)/* $(TEST_DEPS) $(TEST_SRC_DIR)/*~ $(TEST_INC_DIR)/*~ ./*~
