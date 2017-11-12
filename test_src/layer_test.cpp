@@ -1,4 +1,4 @@
-#include "cnn_test.h"
+#include "layer_test.h"
 
 TEST_F(ConvolutionLayerTest, apply)
 {
