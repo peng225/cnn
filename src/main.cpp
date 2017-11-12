@@ -1,16 +1,7 @@
 #include "cnn.h"
+#include "utility.h"
 #include <iostream>
 #include <cassert>
-
-template <class X>
-void printVector(const std::vector<X>& vec)
-{
-    for(auto elem : vec){
-        std::cout << elem << ", ";
-    }
-    std::cout << std::endl;
-    std::cout << std::endl;
-}
 
 int main(int argc, char** argv)
 {
@@ -18,7 +9,7 @@ int main(int argc, char** argv)
     DeepNetwork dn;
     dn.setInputInfo(DataSize(3, 3), 1);
 
-    auto l1 = std::make_shared<ConvolutionLayer>(1, 2, 2);
+    auto l1 = std::make_shared<ConvolutionLayer>(1, 3, 2);
     dn.addLayer(l1);
 
     auto l2 = std::make_shared<ReLULayer>();
@@ -30,6 +21,7 @@ int main(int argc, char** argv)
     auto l4 = std::make_shared<FullConnectLayer>(DataSize(2, 1));
     dn.addLayer(l4);
 
+    for(int numTrain = 0; numTrain < 5; numTrain++){
     // Learn horizontal line
     for(int i = 0; i < 2; i++){
         std::cout << "=== Horizontal line " << i << std::endl;
@@ -58,6 +50,7 @@ int main(int argc, char** argv)
         std::cout << "output after learning:" << std::endl;
         auto outputs = dn.feedInput(input);
         printVector(outputs.back());
+    }
     }
 
 
