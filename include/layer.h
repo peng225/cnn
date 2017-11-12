@@ -39,6 +39,7 @@ public:
     std::vector<float> updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
                 const std::vector<float>& propError);
+    void dumpWeight();
 
 private:
     std::vector<float> weight;

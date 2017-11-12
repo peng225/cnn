@@ -97,7 +97,7 @@ std::vector<float> ConvolutionLayer::apply(const std::vector<float>& input) cons
                             if(winX - zeroPad + outX < 0 || inputSize.first <= winX - zeroPad + outX){
                                 continue;
                             }
-                            auto w = getValFromVecMap(weight, winX, winY, windowSize, windowSize, inCh + inCh * outCh);
+                            auto w = getValFromVecMap(weight, winX, winY, windowSize, windowSize, inCh + numInputChannel * outCh);
                             auto inVal = getValFromVecMap(input, winX - zeroPad + outX, winY - zeroPad + outY, 
                                             inputSize.first, inputSize.second, inCh);
                             convVal += w * inVal;
@@ -124,7 +124,7 @@ void ConvolutionLayer::initWeight()
     weight.resize(windowSize * windowSize * numInputChannel * numOutputChannel);
 
     std::mt19937 mt(0);
-    std::uniform_real_distribution<double> rd(0.0,1.0);
+    std::uniform_real_distribution<double> rd(-1.0, 1.0);
     for(auto& elem : weight){
         elem = rd(mt);
     }
@@ -158,7 +158,7 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
                             sumVal += pe * inVal;
                         }
                     }
-                    setValToVecMap(dEdw, winX, winY, windowSize, windowSize, inCh + inCh * outCh, sumVal);
+                    setValToVecMap(dEdw, winX, winY, windowSize, windowSize, inCh + numInputChannel * outCh, sumVal);
                 }
             }
         }
@@ -172,13 +172,15 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
     /* Update bias */
     std::vector<float> dEdb(numOutputChannel);
     for(int outCh = 0; outCh < numOutputChannel; outCh++){
-        for(int out; out < outputSize.first * outputSize.second; out++){
+        for(int out = 0; out < outputSize.first * outputSize.second; out++){
             auto pe = getValFromVecMap(propError, out, 0, outputSize.first * outputSize.second, 1, outCh);
             dEdb.at(outCh) += pe;
         }
         bias.at(outCh) -= GAMMA * dEdb.at(outCh);
     }
     L2Normalization(weight, bias);
+    std::cout << "Conv layer after bias:" << std::endl;
+    printVector(bias);
 
 
     /* Next propError */
@@ -192,6 +194,25 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
 
     return nextPropError;
 
+}
+
+void ConvolutionLayer::dumpWeight()
+{
+    for(int outCh = 0 ; outCh < numOutputChannel; outCh++){
+        std::cout << "==== outCh: " << outCh << " ====" << std::endl;
+        for(int inCh = 0 ; inCh < numInputChannel; inCh++){
+            std::cout << "==== inCh: " << inCh << " ====" << std::endl;
+            std::cout << "weight:" << std::endl;
+            for(int winY = 0; winY < windowSize; winY++){
+                for(int winX = 0; winX < windowSize; winX++){
+                    std::cout << getValFromVecMap(weight, winX, winY, windowSize, windowSize, inCh + numInputChannel * outCh) << ", ";
+                }
+                std::cout << std::endl;
+            }
+        }
+        std::cout << "bias:" << std::endl;
+        std::cout << bias.at(outCh) << std::endl;
+    }
 }
 
 /* ======================
@@ -347,7 +368,7 @@ void FullConnectLayer::initWeight()
     weight.resize(inputSize.first * inputSize.second
                 * outputSize.first * outputSize.second * numInputChannel);
     std::mt19937 mt(0);
-    std::uniform_real_distribution<double> rd(0.0,1.0);
+    std::uniform_real_distribution<double> rd(-1.0,1.0);
     for(auto& elem : weight){
         elem = rd(mt);
     }

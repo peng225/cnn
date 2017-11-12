@@ -66,6 +66,8 @@ void DeepNetwork::backPropagate(const std::vector<float>& input, const std::vect
 
     for(auto layer = std::rbegin(layers); layer != std::rend(layers); layer++){
         propError = (*layer)->updateWeight(outputs.at(index - 1), outputs.at(index), propError);
+        std::cout << "Next propError:" << std::endl;
+        printVector(propError);
         index--;
     }
 }

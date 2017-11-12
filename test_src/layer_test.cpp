@@ -46,12 +46,12 @@ TEST_F(ReLULayerTest, updateWeight)
     propError.at(0) = 0.1;
     propError.at(1) = 0.2;
     propError.at(2) = 0.3;
-    auto newPropError = rl.updateWeight(input, output, propError);
+    auto nextPropError = rl.updateWeight(input, output, propError);
 
-    EXPECT_EQ(input.size(), newPropError.size());
-    EXPECT_FLOAT_EQ(0.1, newPropError.at(0));
-    EXPECT_FLOAT_EQ(0, newPropError.at(1));
-    EXPECT_FLOAT_EQ(0, newPropError.at(2));
+    EXPECT_EQ(input.size(), nextPropError.size());
+    EXPECT_FLOAT_EQ(0.1, nextPropError.at(0));
+    EXPECT_FLOAT_EQ(0, nextPropError.at(1));
+    EXPECT_FLOAT_EQ(0, nextPropError.at(2));
 }
 
 TEST_F(PoolingLayerTest, apply)
@@ -96,11 +96,11 @@ TEST_F(PoolingLayerTest, updateWeight)
     propError.at(0) = 0.1;
     propError.at(1) = 0.2;
     propError.at(6) = 0.3;
-    auto newPropError = pl.updateWeight(input, output, propError);
+    auto nextPropError = pl.updateWeight(input, output, propError);
 
-    EXPECT_EQ(input.size(), newPropError.size());
-    EXPECT_FLOAT_EQ(0.1, newPropError.at(0));
-    EXPECT_FLOAT_EQ(0, newPropError.at(1));
-    EXPECT_FLOAT_EQ(0.3, newPropError.at(6));
+    EXPECT_EQ(input.size(), nextPropError.size());
+    EXPECT_FLOAT_EQ(0.1, nextPropError.at(0));
+    EXPECT_FLOAT_EQ(0, nextPropError.at(1));
+    EXPECT_FLOAT_EQ(0.3, nextPropError.at(6));
 }
 
