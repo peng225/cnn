@@ -1,3 +1,4 @@
+#pragma once
 #include "layer.h"
 #include <list>
 #include <vector>

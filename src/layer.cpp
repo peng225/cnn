@@ -4,12 +4,13 @@
 #include <cassert>
 #include <random>
 #include <cmath>
+#include <algorithm>
 
 /* ======================
     Utility functions
    ======================*/
 template <class X>
-void L2Normalization(std::vector<X>& weight, X& bias)
+void normalize(std::vector<X>& weight, X& bias)
 {
     float normalizer = 0;
     for(auto elem : weight){
@@ -25,7 +26,7 @@ void L2Normalization(std::vector<X>& weight, X& bias)
 }
 
 template <class X>
-void L2Normalization(std::vector<X>& weight, std::vector<X>& bias)
+void normalize(std::vector<X>& weight, std::vector<X>& bias)
 {
     float normalizer = 0;
     for(auto elem : weight){
@@ -128,7 +129,7 @@ void ConvolutionLayer::initWeight()
     for(auto& elem : weight){
         elem = rd(mt);
     }
-    L2Normalization(weight, bias);
+    normalize(weight, bias);
 }
 
 std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& input,
@@ -170,6 +171,8 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
 
 
     /* Update bias */
+    std::cout << "Conv layer before bias:" << std::endl;
+    printVector(bias);
     std::vector<float> dEdb(numOutputChannel);
     for(int outCh = 0; outCh < numOutputChannel; outCh++){
         for(int out = 0; out < outputSize.first * outputSize.second; out++){
@@ -178,19 +181,38 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
         }
         bias.at(outCh) -= GAMMA * dEdb.at(outCh);
     }
-    L2Normalization(weight, bias);
+    normalize(weight, bias);
     std::cout << "Conv layer after bias:" << std::endl;
     printVector(bias);
 
 
     /* Next propError */
     std::vector<float> nextPropError(input.size());
-    // TODO: implementation
-    //for(int out = 0; static_cast<size_t>(out) < output.size(); out++){
-    //    for(int in = 0; static_cast<size_t>(in) < input.size(); in++){
-    //        nextPropError.at(in) += propError.at(out) * getValFromVecMap(weight, in, out, input.size());
-    //    }
-    //}
+    for(int inCh = 0; inCh < numInputChannel; inCh++){
+        for(int inY = 0; inY < inputSize.second; inY++){
+            for(int inX = 0; inX < inputSize.first; inX++){
+                float sumVal = 0;
+                for(int outCh = 0; outCh < numOutputChannel; outCh++){
+                    for(int winY = 0; winY < windowSize; winY++){
+                        if(inY - winY + zeroPad < 0 || outputSize.second <= inY - winY + zeroPad){
+                            continue;
+                        }
+                        for(int winX = 0; winX < windowSize; winX++){
+                            if(inX - winX + zeroPad < 0 || outputSize.first <= inX - winX + zeroPad){
+                                continue;
+                            }
+                            auto pe = getValFromVecMap(propError,
+                                        inX - winX + zeroPad, inY - winY + zeroPad,
+                                        outputSize.first, outputSize.second, outCh);
+                            auto w = getValFromVecMap(weight, winX, winY, windowSize, windowSize, inCh + numInputChannel * outCh);
+                            sumVal += pe * w;
+                        }
+                    }
+                }
+                setValToVecMap(nextPropError, inX, inY, inputSize.first, inputSize.second, inCh, sumVal);
+            }
+        }
+    }
 
     return nextPropError;
 
@@ -372,7 +394,7 @@ void FullConnectLayer::initWeight()
     for(auto& elem : weight){
         elem = rd(mt);
     }
-    L2Normalization(weight, bias);
+    normalize(weight, bias);
 }
 
 std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& input,
@@ -405,7 +427,7 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
         dEdb += elem;
     }
     bias -= GAMMA * dEdb;
-    L2Normalization(weight, bias);
+    normalize(weight, bias);
     std::cout << "FC layer after weight:" << std::endl;
     printVector(weight);
     std::cout << "FC layer after bias: " << bias << std::endl;
@@ -422,4 +444,59 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
     return nextPropError;
 }
 
+/* ======================
+    ActivateLayer
+   ======================*/
+void ActivateLayer::calcOutputSize()
+{
+    outputSize = inputSize;
+    numOutputChannel = numInputChannel;
+    assert(numInputChannel == 1);
+    assert(numOutputChannel == 1);
+}
+
+std::vector<float> ActivateLayer::apply(const std::vector<float>& input) const
+{
+    assert(input.size() == static_cast<size_t>(inputSize.first * inputSize.second * numInputChannel));
+    return softmax(input);
+}
+
+std::vector<float> ActivateLayer::updateWeight(const std::vector<float>& input,
+                const std::vector<float>& output,
+                const std::vector<float>& propError)
+{
+    assert(!propError.empty());
+    /* Next propError */
+    std::vector<float> nextPropError(input.size());
+    for(int out = 0; static_cast<size_t>(out) < output.size(); out++){
+        /* 出力層は最後に置かれること、またDeepNetwork::backPropagate関数にてpropErrorが
+           (出力-教師データ)で初期化されることに依存している
+           TODO: この依存関係はなくしたほうがよい？
+        */
+        nextPropError.at(out) = propError.at(out);
+    }
+    return nextPropError;
+}
+
+std::vector<float> ActivateLayer::softmax(const std::vector<float>& input) const
+{
+    auto output = input;
+    float expSum = 0;
+//    float maxValue = *std::max_element(output.begin(), output.end());
+
+//    for(auto& elem : output){
+//        elem /= maxValue;
+//        std::cout << elem << ",";
+//    }
+//    std::cout << std::endl;
+
+    for(auto elem : output){
+        expSum += exp(elem);
+    }
+
+    for(auto& elem : output){
+        elem = exp(elem) / expSum;
+    }
+    return output;
+}
 

@@ -1,8 +1,9 @@
+#pragma once
 #include <vector>
 
 typedef std::pair<int, int> DataSize;
 
-const float GAMMA = 0.1;
+const float GAMMA = 0.05;  // 学習率
 
 class ConvolutionLayerTest;
 
@@ -35,10 +36,10 @@ public:
 
     void calcOutputSize() override;
     std::vector<float> apply(const std::vector<float>& input) const override;
-    void initWeight();
+    void initWeight() override;
     std::vector<float> updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError);
+                const std::vector<float>& propError) override;
     void dumpWeight();
 
 private:
@@ -55,7 +56,7 @@ public:
     std::vector<float> apply(const std::vector<float>& input) const override;
     std::vector<float> updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError);
+                const std::vector<float>& propError) override;
 
 private:
 
@@ -71,7 +72,7 @@ public:
     std::vector<float> apply(const std::vector<float>& input) const override;
     std::vector<float> updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError);
+                const std::vector<float>& propError) override;
 
 
 private:
@@ -86,14 +87,28 @@ public:
 
     void calcOutputSize() override;
     std::vector<float> apply(const std::vector<float>& input) const override;
-    void initWeight();
+    void initWeight() override;
     std::vector<float> updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError);
+                const std::vector<float>& propError) override;
 
 private:
     std::vector<float> weight;
     float bias;
+};
+
+class ActivateLayer : public Layer
+{
+public:
+    void calcOutputSize() override;
+    std::vector<float> apply(const std::vector<float>& input) const override;
+    std::vector<float> updateWeight(const std::vector<float>& input,
+                const std::vector<float>& output,
+                const std::vector<float>& propError) override;
+
+private:
+    std::vector<float> softmax(const std::vector<float>& input) const;
+
 };
 
 
