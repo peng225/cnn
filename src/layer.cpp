@@ -218,7 +218,7 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
 
 }
 
-void ConvolutionLayer::dumpWeight()
+void ConvolutionLayer::dumpWeight() const
 {
     for(int outCh = 0 ; outCh < numOutputChannel; outCh++){
         std::cout << "==== outCh: " << outCh << " ====" << std::endl;
@@ -235,6 +235,54 @@ void ConvolutionLayer::dumpWeight()
         std::cout << "bias:" << std::endl;
         std::cout << bias.at(outCh) << std::endl;
     }
+}
+
+void ConvolutionLayer::saveWeight(std::ofstream& ofs) const
+{
+    dumpWeight();
+    ofs << weight.size() << std::endl;
+    for(auto w : weight){
+        ofs << w << std::endl;
+    }
+    ofs << bias.size() << std::endl;
+    for(auto b : bias){
+        ofs << b << std::endl;
+    }
+}
+
+void ConvolutionLayer::loadWeight(std::ifstream& ifs)
+{
+    std::string buf;
+    if(std::getline(ifs, buf)){
+        weight.resize(std::stof(buf));
+    }else{
+        std::cerr << "failed to load weight size" << std::endl;
+        return;
+    }
+    for(auto& w : weight){
+        if(std::getline(ifs, buf)){
+            w = std::stof(buf);
+        }else{
+            std::cerr << "failed to load weight" << std::endl;
+            return;
+        }
+    }
+
+    if(std::getline(ifs, buf)){
+        bias.resize(std::stoi(buf));
+    }else{
+        std::cerr << "failed to load bias size" << std::endl;
+        return;
+    }
+    for(auto& b : bias){
+        if(std::getline(ifs, buf)){
+            b = std::stof(buf);
+        }else{
+            std::cerr << "failed to load bias" << std::endl;
+            return;
+        }
+    }
+    dumpWeight();
 }
 
 /* ======================
@@ -444,10 +492,47 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
     return nextPropError;
 }
 
+void FullConnectLayer::saveWeight(std::ofstream& ofs) const
+{
+    ofs << weight.size() << std::endl;
+    for(auto w : weight){
+        ofs << w << std::endl;
+    }
+    ofs << bias << std::endl;
+}
+
+void FullConnectLayer::loadWeight(std::ifstream& ifs)
+{
+    std::string buf;
+    if(std::getline(ifs, buf)){
+        weight.resize(std::stoi(buf));
+    }else{
+        std::cerr << "failed to load weight size" << std::endl;
+        return;
+    }
+    for(auto& w : weight){
+        if(std::getline(ifs, buf)){
+            w = std::stof(buf);
+        }else{
+            std::cerr << "failed to load weight" << std::endl;
+            return;
+        }
+    }
+
+    if(std::getline(ifs, buf)){
+        bias = std::stof(buf);
+    }else{
+        std::cerr << "failed to load bias" << std::endl;
+        return;
+    }
+}
+
+
+
 /* ======================
-    ActivateLayer
+    SoftmaxLayer
    ======================*/
-void ActivateLayer::calcOutputSize()
+void SoftmaxLayer::calcOutputSize()
 {
     outputSize = inputSize;
     numOutputChannel = numInputChannel;
@@ -455,13 +540,13 @@ void ActivateLayer::calcOutputSize()
     assert(numOutputChannel == 1);
 }
 
-std::vector<float> ActivateLayer::apply(const std::vector<float>& input) const
+std::vector<float> SoftmaxLayer::apply(const std::vector<float>& input) const
 {
     assert(input.size() == static_cast<size_t>(inputSize.first * inputSize.second * numInputChannel));
     return softmax(input);
 }
 
-std::vector<float> ActivateLayer::updateWeight(const std::vector<float>& input,
+std::vector<float> SoftmaxLayer::updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
                 const std::vector<float>& propError)
 {
@@ -478,7 +563,7 @@ std::vector<float> ActivateLayer::updateWeight(const std::vector<float>& input,
     return nextPropError;
 }
 
-std::vector<float> ActivateLayer::softmax(const std::vector<float>& input) const
+std::vector<float> SoftmaxLayer::softmax(const std::vector<float>& input) const
 {
     auto output = input;
     float expSum = 0;
@@ -496,6 +581,47 @@ std::vector<float> ActivateLayer::softmax(const std::vector<float>& input) const
 
     for(auto& elem : output){
         elem = exp(elem) / expSum;
+    }
+    return output;
+}
+
+/* ======================
+    SigmoidLayer
+   ======================*/
+void SigmoidLayer::calcOutputSize()
+{
+    outputSize = inputSize;
+    numOutputChannel = numInputChannel;
+    assert(numInputChannel == 1);
+    assert(numOutputChannel == 1);
+}
+
+std::vector<float> SigmoidLayer::apply(const std::vector<float>& input) const
+{
+    assert(input.size() == static_cast<size_t>(inputSize.first * inputSize.second * numInputChannel));
+    return sigmoid(input);
+}
+
+std::vector<float> SigmoidLayer::updateWeight(const std::vector<float>& input,
+                const std::vector<float>& output,
+                const std::vector<float>& propError)
+{
+    assert(!propError.empty());
+    /* Next propError */
+    std::vector<float> nextPropError(input.size());
+    for(int out = 0; static_cast<size_t>(out) < output.size(); out++){
+        nextPropError.at(out) = propError.at(out)
+                                * output.at(out) * (1 - output.at(out));
+    }
+    return nextPropError;
+}
+
+std::vector<float> SigmoidLayer::sigmoid(const std::vector<float>& input) const
+{
+    auto output = input;
+
+    for(auto& elem : output){
+        elem = 1 / (1 + exp(-elem));
     }
     return output;
 }

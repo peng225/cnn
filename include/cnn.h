@@ -11,6 +11,8 @@ public:
     void addLayer(std::shared_ptr<Layer> layer);
     std::vector<std::vector<float>> feedInput(const std::vector<float>& input) const;
     void backPropagate(const std::vector<float>& input, const std::vector<float>& correctOutput);
+    void saveWeight(std::string filename) const;
+    void loadWeight(std::string filename);
 private:
     DataSize inputSize;
     int numInputChannel;

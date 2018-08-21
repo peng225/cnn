@@ -72,3 +72,30 @@ void DeepNetwork::backPropagate(const std::vector<float>& input, const std::vect
     }
 }
 
+
+void DeepNetwork::saveWeight(std::string filename) const
+{
+    std::ofstream ofs(filename);
+    if(ofs.fail()){
+        std::cerr << "failed to open file " << filename << std::endl;
+        return;
+    }
+
+    for(const auto& layer : layers){
+        layer->saveWeight(ofs);
+    }
+}
+
+void DeepNetwork::loadWeight(std::string filename)
+{
+    std::ifstream ifs(filename);
+    if(ifs.fail()){
+        std::cerr << "failed to open file " << filename << std::endl;
+        return;
+    }
+
+    for(const auto& layer : layers){
+        layer->loadWeight(ifs);
+    }
+}
+
