@@ -1,4 +1,6 @@
 #include "layer_test.h"
+#include "utility.h"
+#include <fstream>
 
 TEST_F(ConvolutionLayerTest, apply)
 {
@@ -9,6 +11,28 @@ TEST_F(ConvolutionLayerTest, apply)
     cl.initWeight();
     auto output = cl.apply(input);
     EXPECT_EQ(9UL, output.size());
+}
+
+TEST_F(ConvolutionLayerTest, save_and_load)
+{
+    ConvolutionLayer cl(1, 3, 1);
+    cl.setInputInfo(DataSize(3, 3), 1);
+    cl.calcOutputSize();
+    cl.initWeight();
+
+    std::ofstream ofs("save_and_load_test");
+    cl.saveWeight(ofs);
+    ofs.close();
+
+    auto copiedWeight = *getWeight(cl);
+    auto copiedBias = *getBias(cl);
+    getWeight(cl)->clear();
+    getBias(cl)->at(0) = 3;
+
+    std::ifstream ifs("save_and_load_test");
+    cl.loadWeight(ifs);
+    EXPECT_NEAR(copiedWeight.at(0), getWeight(cl)->at(0), 0.0001);
+    EXPECT_NEAR(copiedBias.at(0), getBias(cl)->at(0), 0.0001);
 }
 
 TEST_F(ReLULayerTest, apply)
@@ -102,5 +126,27 @@ TEST_F(PoolingLayerTest, updateWeight)
     EXPECT_FLOAT_EQ(0.1, nextPropError.at(0));
     EXPECT_FLOAT_EQ(0, nextPropError.at(1));
     EXPECT_FLOAT_EQ(0.3, nextPropError.at(6));
+}
+
+TEST_F(FullConnectLayerTest, save_and_load)
+{
+    FullConnectLayer fl(DataSize(2, 1));
+    fl.setInputInfo(DataSize(3, 3), 1);
+    fl.calcOutputSize();
+    fl.initWeight();
+
+    std::ofstream ofs("save_and_load_test");
+    fl.saveWeight(ofs);
+    ofs.close();
+
+    auto copiedWeight = *getWeight(fl);
+    auto copiedBias = *getBias(fl);
+    getWeight(fl)->clear();
+    *getBias(fl) = 3;
+
+    std::ifstream ifs("save_and_load_test");
+    fl.loadWeight(ifs);
+    EXPECT_NEAR(copiedWeight.at(0), getWeight(fl)->at(0), 0.0001);
+    EXPECT_NEAR(copiedBias, *getBias(fl), 0.0001);
 }
 

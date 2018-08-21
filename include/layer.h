@@ -33,6 +33,7 @@ protected:
 
 class ConvolutionLayer : public Layer
 {
+friend class ConvolutionLayerTest;
 public:
     ConvolutionLayer(int zeroPad, int windowSize, int numOutputChannel);
 
@@ -86,6 +87,7 @@ private:
 
 class FullConnectLayer : public Layer
 {
+friend class FullConnectLayerTest;
 public:
     FullConnectLayer(DataSize size);
 

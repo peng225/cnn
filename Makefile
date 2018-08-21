@@ -24,7 +24,7 @@ TEST_CFLAGS = -c -g -Wall -std=c++14 -MMD -MP
 TEST_FINAL_CFLAGS = -g -Wall -std=c++14
 TEST_LDLIBS = gtest_main.a -lpthread -pthread
 
-TEST_TARGET = test_main
+TEST_TARGET = unittest
 
 TEST_SRC_DIR = ./test_src
 TEST_INC_DIR = ./test_include
