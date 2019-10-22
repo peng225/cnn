@@ -29,16 +29,16 @@ void DeepNetwork::addLayer(std::shared_ptr<Layer> layer)
     }
     layer->calcOutputSize();
     layer->initWeight();
-    layers.push_back(layer);
+    layers.emplace_back(layer);
 }
 
 std::vector<std::vector<float>> DeepNetwork::feedInput(const std::vector<float>& input) const
 {
     std::vector<std::vector<float>> outputs;
     outputs.reserve(layers.size() + 1);
-    outputs.push_back(input);
+    outputs.emplace_back(input);
     for(auto& layer : layers){
-        outputs.push_back(layer->apply(outputs.back()));
+        outputs.emplace_back(layer->apply(outputs.back()));
     }
     return outputs;
 }
