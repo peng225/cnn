@@ -83,6 +83,8 @@ void ConvolutionLayer::calcOutputSize()
 
 std::vector<float> ConvolutionLayer::apply(const std::vector<float>& input) const
 {
+    assert(windowSize <= inputSize.first + 2 * zeroPad);
+    assert(windowSize <= inputSize.second + 2 * zeroPad);
     assert(input.size() == static_cast<size_t>(inputSize.first * inputSize.second * numInputChannel));
     std::vector<float> output(outputSize.first * outputSize.second * numOutputChannel);
     for(int outCh = 0; outCh < numOutputChannel; outCh++){
@@ -329,6 +331,8 @@ void PoolingLayer::calcOutputSize()
 
 std::vector<float> PoolingLayer::apply(const std::vector<float>& input) const
 {
+    assert(windowSize <= inputSize.first + 2 * zeroPad);
+    assert(windowSize <= inputSize.second + 2 * zeroPad);
     assert(input.size() == static_cast<size_t>(inputSize.first * inputSize.second) * numInputChannel);
     std::vector<float> output(outputSize.first * outputSize.second * numOutputChannel);
     for(int channel = 0; channel < numInputChannel; channel++){
@@ -551,6 +555,7 @@ std::vector<float> SoftmaxLayer::updateWeight(const std::vector<float>& input,
                 const std::vector<float>& propError)
 {
     assert(!propError.empty());
+    assert(input.size() == output.size());
     /* Next propError */
     std::vector<float> nextPropError(input.size());
     for(int out = 0; static_cast<size_t>(out) < output.size(); out++){
@@ -565,6 +570,7 @@ std::vector<float> SoftmaxLayer::updateWeight(const std::vector<float>& input,
 
 std::vector<float> SoftmaxLayer::softmax(const std::vector<float>& input) const
 {
+    assert(2 <= input.size());
     auto output = input;
     float expSum = 0;
 //    float maxValue = *std::max_element(output.begin(), output.end());
