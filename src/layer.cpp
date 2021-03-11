@@ -131,6 +131,9 @@ void ConvolutionLayer::initWeight()
     for(auto& elem : weight){
         elem = rd(mt);
     }
+    for(auto& elem : bias){
+        elem = rd(mt);
+    }
     normalize(weight, bias);
 }
 
@@ -446,6 +449,7 @@ void FullConnectLayer::initWeight()
     for(auto& elem : weight){
         elem = rd(mt);
     }
+    bias = rd(mt);
     normalize(weight, bias);
 }
 
