@@ -47,12 +47,12 @@ void normalize(std::vector<X>& weight, std::vector<X>& bias)
 
 float getValFromVecMap(const std::vector<float>& vec, int x, int y, int width, int height, int channel)
 {
-    return vec.at(x + y * width + (width * height) * channel);
+    return vec[x + y * width + (width * height) * channel];
 }
 
 void setValToVecMap(std::vector<float>& vec, int x, int y, int width, int height, int channel, float val)
 {
-    vec.at(x + y * width + (width * height) * channel) = val;
+    vec[x + y * width + (width * height) * channel] = val;
 }
 
 
@@ -113,7 +113,7 @@ std::vector<float> ConvolutionLayer::apply(const std::vector<float>& input) cons
         for(int outY = 0; outY < outputSize.second; outY++){
             for(int outX = 0; outX < outputSize.first; outX++){
                 float currentOutVal = getValFromVecMap(output, outX, outY, outputSize.first, outputSize.second, outCh);
-                setValToVecMap(output, outX, outY, outputSize.first, outputSize.second, outCh, currentOutVal + bias.at(outCh));
+                setValToVecMap(output, outX, outY, outputSize.first, outputSize.second, outCh, currentOutVal + bias[outCh]);
             }
         }
     }
@@ -428,7 +428,7 @@ std::vector<float> FullConnectLayer::apply(const std::vector<float>& input) cons
                 sumVal += w * inVal;
             }
         }
-        output.at(out) = sumVal + bias;
+        output[out] = sumVal + bias;
     }
     return output;
 }
