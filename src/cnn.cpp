@@ -48,7 +48,7 @@ void DeepNetwork::backPropagate(const std::vector<float>& input, const std::vect
     auto outputs = feedInput(input);
     std::vector<float> propError(outputs.back().size());
     assert(outputs.back().size() == correctOutput.size());
-    assert(0 <= reduceRate && reduceRate <= 1.0);
+    assert(0 < reduceRate && reduceRate <= 1.0);
 
     for(int i = 0; static_cast<size_t>(i) < outputs.back().size(); i++){
         propError.at(i) = outputs.back().at(i) - correctOutput.at(i);
