@@ -139,7 +139,8 @@ void ConvolutionLayer::initWeight()
 
 std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError)
+                const std::vector<float>& propError,
+                double reduceRate)
 {
     assert(!propError.empty());
     /* Update weight */
@@ -171,7 +172,7 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
     }
 
     for(int i = 0; i < windowSize * windowSize * numInputChannel * numOutputChannel; i++){
-        weight.at(i) -= GAMMA * dEdw.at(i);
+        weight.at(i) -= reduceRate * GAMMA * dEdw.at(i);
     }
 
 
@@ -184,7 +185,7 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
             auto pe = getValFromVecMap(propError, out, 0, outputSize.first * outputSize.second, 1, outCh);
             dEdb.at(outCh) += pe;
         }
-        bias.at(outCh) -= GAMMA * dEdb.at(outCh);
+        bias.at(outCh) -= reduceRate * GAMMA * dEdb.at(outCh);
     }
     normalize(weight, bias);
     std::cout << "Conv layer after bias:" << std::endl;
@@ -311,7 +312,8 @@ std::vector<float> ReLULayer::apply(const std::vector<float>& input) const
 
 std::vector<float> ReLULayer::updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError)
+                const std::vector<float>& propError,
+                double reduceRate)
 {
     assert(!propError.empty());
     /* Next propError */
@@ -367,7 +369,8 @@ std::vector<float> PoolingLayer::apply(const std::vector<float>& input) const
 
 std::vector<float> PoolingLayer::updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError)
+                const std::vector<float>& propError,
+                double reduceRate)
 {
     assert(!propError.empty());
     assert(numInputChannel == numOutputChannel);
@@ -455,7 +458,8 @@ void FullConnectLayer::initWeight()
 
 std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError)
+                const std::vector<float>& propError,
+                double reduceRate)
 {
     assert(!propError.empty());
     /* Update weight */
@@ -472,7 +476,7 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
     std::cout << "FC layer before weight:" << std::endl;
     printVector(weight);
     for(int i = 0; static_cast<size_t>(i) < input.size() * output.size(); i++){
-        weight.at(i) -= GAMMA * dEdw.at(i);
+        weight.at(i) -= reduceRate * GAMMA * dEdw.at(i);
     }
 
 
@@ -482,7 +486,7 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
     for(const auto elem : propError){
         dEdb += elem;
     }
-    bias -= GAMMA * dEdb;
+    bias -= reduceRate * GAMMA * dEdb;
     normalize(weight, bias);
     std::cout << "FC layer after weight:" << std::endl;
     printVector(weight);
@@ -556,7 +560,8 @@ std::vector<float> SoftmaxLayer::apply(const std::vector<float>& input) const
 
 std::vector<float> SoftmaxLayer::updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError)
+                const std::vector<float>& propError,
+                double reduceRate)
 {
     assert(!propError.empty());
     assert(input.size() == output.size());
@@ -614,7 +619,8 @@ std::vector<float> SigmoidLayer::apply(const std::vector<float>& input) const
 
 std::vector<float> SigmoidLayer::updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError)
+                const std::vector<float>& propError,
+                double reduceRate)
 {
     assert(!propError.empty());
     /* Next propError */

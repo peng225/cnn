@@ -20,7 +20,8 @@ public:
     virtual void initWeight(){};
     virtual std::vector<float> updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError) = 0;
+                const std::vector<float>& propError,
+                double reduceRate) = 0;
     virtual void saveWeight(std::ofstream& ofs) const{};
     virtual void loadWeight(std::ifstream& ifs){};
 
@@ -42,7 +43,8 @@ public:
     void initWeight() override;
     std::vector<float> updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError) override;
+                const std::vector<float>& propError,
+                double reduceRate = 1.0) override;
     void dumpWeight() const;
     void saveWeight(std::ofstream& ofs) const override;
     void loadWeight(std::ifstream& ifs) override;
@@ -61,7 +63,8 @@ public:
     std::vector<float> apply(const std::vector<float>& input) const override;
     std::vector<float> updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError) override;
+                const std::vector<float>& propError,
+                double reduceRate = 1.0) override;
 
 private:
 
@@ -77,7 +80,8 @@ public:
     std::vector<float> apply(const std::vector<float>& input) const override;
     std::vector<float> updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError) override;
+                const std::vector<float>& propError,
+                double reduceRate = 1.0) override;
 
 
 private:
@@ -96,7 +100,8 @@ public:
     void initWeight() override;
     std::vector<float> updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError) override;
+                const std::vector<float>& propError,
+                double reduceRate = 1.0) override;
     void saveWeight(std::ofstream& ofs) const override;
     void loadWeight(std::ifstream& ifs) override;
 
@@ -112,7 +117,8 @@ public:
     std::vector<float> apply(const std::vector<float>& input) const override;
     std::vector<float> updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError) override;
+                const std::vector<float>& propError,
+                double reduceRate = 1.0) override;
 
 private:
     std::vector<float> softmax(const std::vector<float>& input) const;
@@ -126,7 +132,8 @@ public:
     std::vector<float> apply(const std::vector<float>& input) const override;
     std::vector<float> updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
-                const std::vector<float>& propError) override;
+                const std::vector<float>& propError,
+                double reduceRate = 1.0) override;
 
 private:
     std::vector<float> sigmoid(const std::vector<float>& input) const;

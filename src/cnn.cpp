@@ -43,11 +43,12 @@ std::vector<std::vector<float>> DeepNetwork::feedInput(const std::vector<float>&
     return outputs;
 }
 
-void DeepNetwork::backPropagate(const std::vector<float>& input, const std::vector<float>& correctOutput)
+void DeepNetwork::backPropagate(const std::vector<float>& input, const std::vector<float>& correctOutput, double reduceRate, bool verbose)
 {
     auto outputs = feedInput(input);
     std::vector<float> propError(outputs.back().size());
     assert(outputs.back().size() == correctOutput.size());
+    assert(0 <= reduceRate && reduceRate <= 1.0);
 
     for(int i = 0; static_cast<size_t>(i) < outputs.back().size(); i++){
         propError.at(i) = outputs.back().at(i) - correctOutput.at(i);
@@ -65,7 +66,7 @@ void DeepNetwork::backPropagate(const std::vector<float>& input, const std::vect
     assert(outputs.size() - 1 == layers.size());
 
     for(auto layer = std::rbegin(layers); layer != std::rend(layers); layer++){
-        propError = (*layer)->updateWeight(outputs.at(index - 1), outputs.at(index), propError);
+        propError = (*layer)->updateWeight(outputs.at(index - 1), outputs.at(index), propError, reduceRate);
         std::cout << "Next propError:" << std::endl;
         printVector(propError);
         index--;
