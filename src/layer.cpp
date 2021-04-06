@@ -59,6 +59,10 @@ void setValToVecMap(std::vector<float>& vec, int x, int y, int width, int height
 /* ======================
     Layer
    ======================*/
+Layer::Layer() : verbose(false)
+{
+}
+
 void Layer::setInputInfo(const DataSize& size, int numInputChannel)
 {
     inputSize = size;
@@ -172,14 +176,28 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
         }
     }
 
+    if(verbose) {
+        std::cout << "Conv layer before weight:" << std::endl;
+        printVector(weight);
+        std::cout << "Conv layer dEdw:" << std::endl;
+        printVector(dEdw);
+        printVector(weight);
+    }
+
     for(int i = 0; i < windowSize * windowSize * numInputChannel * numOutputChannel; i++){
         weight.at(i) -= reduceRate * GAMMA * dEdw.at(i);
     }
 
+    if(verbose) {
+        std::cout << "Conv layer after weight:" << std::endl;
+        printVector(weight);
+    }
 
     /* Update bias */
-    std::cout << "Conv layer before bias:" << std::endl;
-    printVector(bias);
+    if(verbose) {
+        std::cout << "Conv layer before bias:" << std::endl;
+        printVector(bias);
+    }
     std::vector<float> dEdb(numOutputChannel);
     for(int outCh = 0; outCh < numOutputChannel; outCh++){
         for(int out = 0; out < outputSize.first * outputSize.second; out++){
@@ -189,9 +207,10 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
         bias.at(outCh) -= reduceRate * GAMMA * dEdb.at(outCh);
     }
     normalize(weight, bias);
-    std::cout << "Conv layer after bias:" << std::endl;
-    printVector(bias);
-
+    if(verbose) {
+        std::cout << "Conv layer after bias:" << std::endl;
+        printVector(bias);
+    }
 
     /* Next propError */
     std::vector<float> nextPropError(input.size());
@@ -222,7 +241,6 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
     }
 
     return nextPropError;
-
 }
 
 void ConvolutionLayer::dumpWeight() const
@@ -246,7 +264,9 @@ void ConvolutionLayer::dumpWeight() const
 
 void ConvolutionLayer::saveWeight(std::ofstream& ofs) const
 {
-    dumpWeight();
+    if(verbose){
+        dumpWeight();
+    }
     ofs << weight.size() << std::endl;
     for(auto w : weight){
         ofs << w << std::endl;
@@ -289,7 +309,9 @@ void ConvolutionLayer::loadWeight(std::ifstream& ifs)
             return;
         }
     }
-    dumpWeight();
+    if(verbose) {
+        dumpWeight();
+    }
 }
 
 /* ======================
@@ -470,28 +492,36 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
             setValToVecMap(dEdw, in, out, input.size(), 1, 0, propError.at(out) * input.at(in));
         }
     }
-    std::cout << "FC layer dEdw:" << std::endl;
-    printVector(dEdw);
+    if(verbose) {
+        std::cout << "FC layer dEdw:" << std::endl;
+        printVector(dEdw);
+    }
 
 
-    std::cout << "FC layer before weight:" << std::endl;
-    printVector(weight);
+    if(verbose) {
+        std::cout << "FC layer before weight:" << std::endl;
+        printVector(weight);
+    }
     for(int i = 0; static_cast<size_t>(i) < input.size() * output.size(); i++){
         weight.at(i) -= reduceRate * GAMMA * dEdw.at(i);
     }
 
 
     /* Update bias */
-    std::cout << "FC layer before bias: " << bias << std::endl;
+    if(verbose) {
+        std::cout << "FC layer before bias: " << bias << std::endl;
+    }
     float dEdb = 0;
     for(const auto elem : propError){
         dEdb += elem;
     }
     bias -= reduceRate * GAMMA * dEdb;
     normalize(weight, bias);
-    std::cout << "FC layer after weight:" << std::endl;
-    printVector(weight);
-    std::cout << "FC layer after bias: " << bias << std::endl;
+    if(verbose) {
+        std::cout << "FC layer after weight:" << std::endl;
+        printVector(weight);
+        std::cout << "FC layer after bias: " << bias << std::endl;
+    }
 
 
     /* Next propError */

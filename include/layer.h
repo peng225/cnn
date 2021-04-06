@@ -11,6 +11,7 @@ class ConvolutionLayerTest;
 class Layer
 {
 public:
+    Layer();
     virtual ~Layer(){};
     void setInputInfo(const DataSize& size, int numInputChannel);
     virtual void calcOutputSize() = 0;
@@ -24,12 +25,14 @@ public:
                 double reduceRate) = 0;
     virtual void saveWeight(std::ofstream& ofs) const{};
     virtual void loadWeight(std::ifstream& ifs){};
+    void setVerboseMode(bool mode){verbose = mode;};
 
 protected:
     DataSize inputSize;
     DataSize outputSize;
     int numInputChannel;
     int numOutputChannel;
+    bool verbose;
 };
 
 class ConvolutionLayer : public Layer

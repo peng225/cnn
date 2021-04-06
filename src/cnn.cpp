@@ -54,21 +54,26 @@ void DeepNetwork::backPropagate(const std::vector<float>& input, const std::vect
         propError.at(i) = outputs.back().at(i) - correctOutput.at(i);
     }
 
-    std::cout << "outputs" << std::endl;
-    for(auto output : outputs){
-        printVector(output);
-    }
+    if(verbose) {
+        std::cout << "outputs" << std::endl;
+        for(auto output : outputs){
+            assert(!output.empty());
+            printVector(output);
+        }
 
-    std::cout << "Initial propError:" << std::endl;
-    printVector(propError);
+        std::cout << "Initial propError:" << std::endl;
+        printVector(propError);
+    }
 
     int index = outputs.size() - 1;
     assert(outputs.size() - 1 == layers.size());
 
     for(auto layer = std::rbegin(layers); layer != std::rend(layers); layer++){
         propError = (*layer)->updateWeight(outputs.at(index - 1), outputs.at(index), propError, reduceRate);
-        std::cout << "Next propError:" << std::endl;
-        printVector(propError);
+        if(verbose) {
+            std::cout << "Next propError:" << std::endl;
+            printVector(propError);
+        }
         index--;
     }
 }
@@ -97,6 +102,14 @@ void DeepNetwork::loadWeight(std::string filename)
 
     for(const auto& layer : layers){
         layer->loadWeight(ifs);
+    }
+}
+
+
+void DeepNetwork::setVerboseMode(bool mode)
+{
+    for(const auto& layer : layers){
+        layer->setVerboseMode(mode);
     }
 }
 

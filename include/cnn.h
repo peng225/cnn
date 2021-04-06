@@ -14,6 +14,7 @@ public:
                        double reduceRate = 1.0, bool verbose = false);
     void saveWeight(std::string filename) const;
     void loadWeight(std::string filename);
+    void setVerboseMode(bool mode);
 private:
     DataSize inputSize;
     int numInputChannel;
