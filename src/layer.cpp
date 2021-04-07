@@ -470,7 +470,8 @@ void FullConnectLayer::initWeight()
 {
     weight.resize(inputSize.first * inputSize.second
                 * outputSize.first * outputSize.second * numInputChannel);
-    std::mt19937 mt(0);
+    std::random_device seedGen;
+    std::mt19937 mt(seedGen());
     std::uniform_real_distribution<double> rd(-1.0,1.0);
     for(auto& elem : weight){
         elem = rd(mt);
