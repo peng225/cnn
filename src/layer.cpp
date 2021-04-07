@@ -674,3 +674,65 @@ std::vector<float> SigmoidLayer::sigmoid(const std::vector<float>& input) const
     return output;
 }
 
+/* ======================
+    StandardizeLayer
+   ======================*/
+void StandardizeLayer::calcOutputSize()
+{
+    outputSize = inputSize;
+    numOutputChannel = numInputChannel;
+}
+
+std::vector<float> StandardizeLayer::apply(const std::vector<float>& input) const
+{
+    assert(input.size() == static_cast<size_t>(inputSize.first * inputSize.second * numInputChannel));
+    return standardize(input);
+}
+
+std::vector<float> StandardizeLayer::updateWeight(const std::vector<float>& input,
+                const std::vector<float>& output,
+                const std::vector<float>& propError,
+                double reduceRate)
+{
+    assert(!propError.empty());
+    /* Next propError */
+    std::vector<float> nextPropError(input.size());
+    auto stddev = getStddev(input, getMean(input));
+    nextPropError = propError;
+    for(auto& elem : nextPropError) {
+        elem /= stddev;
+    }
+    return nextPropError;
+}
+
+std::vector<float> StandardizeLayer::standardize(const std::vector<float>& input) const
+{
+    auto output = input;
+    auto mean = getMean(input);
+    auto stddev = getStddev(input, mean);
+    for(auto& elem : output) {
+        elem = (elem - mean)/stddev;
+    }
+    return output;
+}
+
+float StandardizeLayer::getMean(const std::vector<float>& input) const
+{
+    float mean = 0;
+    for(auto elem : input) {
+        mean += elem;
+    }
+    return mean / input.size();
+}
+
+float StandardizeLayer::getStddev(const std::vector<float>& input,
+                                    float mean) const
+{
+    assert(input.size() > 1);
+    float stddev = 0;
+    for(auto elem : input) {
+        stddev += (elem - mean) * (elem - mean);
+    }
+    return sqrt(stddev / (input.size() - 1));
+}
+

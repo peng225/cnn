@@ -143,4 +143,17 @@ private:
 
 };
 
+class StandardizeLayer : public Layer
+{
+public:
+    void calcOutputSize() override;
+    std::vector<float> apply(const std::vector<float>& input) const override;
+    std::vector<float> updateWeight(const std::vector<float>& input,
+                const std::vector<float>& output,
+                const std::vector<float>& propError,
+                double reduceRate = 1.0) override;
+    std::vector<float> standardize(const std::vector<float>& input) const;
+    float getMean(const std::vector<float>& input) const;
+    float getStddev(const std::vector<float>& input, float mean) const;
+};
 
