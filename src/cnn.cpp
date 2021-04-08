@@ -7,6 +7,16 @@
 /* ======================
     DeepNetwork
    ======================*/
+DeepNetwork::DeepNetwork()
+    : minibatchSize(1), inputCount(0)
+{
+}
+
+DeepNetwork::DeepNetwork(int mbSize)
+    : minibatchSize(mbSize), inputCount(0)
+{
+}
+
 bool DeepNetwork::setInputInfo(DataSize size, int numChannel)
 {
     if(size.first <= 0 || size.second <= 0){
@@ -46,6 +56,7 @@ std::vector<std::vector<float>> DeepNetwork::feedInput(const std::vector<float>&
 void DeepNetwork::backPropagate(const std::vector<float>& input, const std::vector<float>& correctOutput, double reduceRate, bool verbose)
 {
     assert(0 < reduceRate && reduceRate <= 1.0);
+    assert(inputCount < minibatchSize);
 
     auto outputs = feedInput(input);
     std::vector<float> propError(outputs.back().size());
@@ -76,6 +87,12 @@ void DeepNetwork::backPropagate(const std::vector<float>& input, const std::vect
             printVector(propError);
         }
         index--;
+    }
+
+    inputCount++;
+    if(inputCount == minibatchSize) {
+        inputCount = 0;
+        flush();
     }
 }
 
@@ -111,6 +128,13 @@ void DeepNetwork::setVerboseMode(bool mode)
 {
     for(const auto& layer : layers){
         layer->setVerboseMode(mode);
+    }
+}
+
+void DeepNetwork::flush()
+{
+    for(const auto& layer : layers){
+        layer->flush();
     }
 }
 

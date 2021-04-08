@@ -186,10 +186,13 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
         printVector(weight);
     }
 
+    if(diffWeight.empty()) {
+        diffWeight.resize(weight.size());
+        diffBias.resize(bias.size());
+    }
     for(int i = 0; i < windowSize * windowSize * numInputChannel * numOutputChannel; i++){
-        weight.at(i) -= reduceRate * GAMMA * dEdw.at(i);
-        weight.at(i) -= LAMBDA * reduceRate * GAMMA * weight.at(i);
-        assert(std::isfinite(weight.at(i)));
+        diffWeight.at(i) -= reduceRate * GAMMA * dEdw.at(i);
+        diffWeight.at(i) -= LAMBDA * reduceRate * GAMMA * weight.at(i);
     }
 
     if(verbose) {
@@ -208,9 +211,8 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
             auto pe = getValFromVecMap(propError, out, 0, outputSize.first * outputSize.second, 1, outCh);
             dEdb.at(outCh) += pe;
         }
-        bias.at(outCh) -= reduceRate * GAMMA * dEdb.at(outCh);
-        bias.at(outCh) -= LAMBDA * reduceRate * GAMMA * bias.at(outCh);
-        assert(std::isfinite(bias.at(outCh)));
+        diffBias.at(outCh) -= reduceRate * GAMMA * dEdb.at(outCh);
+        diffBias.at(outCh) -= LAMBDA * reduceRate * GAMMA * bias.at(outCh);
     }
     if(verbose) {
         std::cout << "Conv layer after bias:" << std::endl;
@@ -316,6 +318,26 @@ void ConvolutionLayer::loadWeight(std::ifstream& ifs)
     }
     if(verbose) {
         dumpWeight();
+    }
+}
+
+void ConvolutionLayer::flush()
+{
+    assert((diffWeight.empty() && diffBias.empty())
+        || (!diffWeight.empty() && !diffBias.empty()));
+    if(!diffWeight.empty()) {
+        for(int i = 0; static_cast<size_t>(i) < weight.size(); i++) {
+            weight.at(i) += diffWeight.at(i);
+            assert(std::isfinite(weight.at(i)));
+        }
+
+        for(int i = 0; static_cast<size_t>(i) < bias.size(); i++) {
+            bias.at(i) += diffBias.at(i);
+            assert(std::isfinite(bias.at(i)));
+        }
+
+        diffWeight.clear();
+        diffBias.clear();
     }
 }
 
@@ -502,15 +524,17 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
         printVector(dEdw);
     }
 
-
     if(verbose) {
         std::cout << "FC layer before weight:" << std::endl;
         printVector(weight);
     }
+    if(diffWeight.empty()) {
+        diffWeight.resize(weight.size());
+        diffBias = 0;
+    }
     for(int i = 0; static_cast<size_t>(i) < input.size() * output.size(); i++){
-        weight.at(i) -= reduceRate * GAMMA * dEdw.at(i);
-        weight.at(i) -= LAMBDA * reduceRate * GAMMA * weight.at(i);
-        assert(std::isfinite(weight.at(i)));
+        diffWeight.at(i) -= reduceRate * GAMMA * dEdw.at(i);
+        diffWeight.at(i) -= LAMBDA * reduceRate * GAMMA * weight.at(i);
     }
 
 
@@ -522,9 +546,8 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
     for(const auto elem : propError){
         dEdb += elem;
     }
-    bias -= reduceRate * GAMMA * dEdb;
-    bias -= LAMBDA * reduceRate * GAMMA * bias;
-    assert(std::isfinite(bias));
+    diffBias -= reduceRate * GAMMA * dEdb;
+    diffBias -= LAMBDA * reduceRate * GAMMA * bias;
     if(verbose) {
         std::cout << "FC layer after weight:" << std::endl;
         printVector(weight);
@@ -578,6 +601,21 @@ void FullConnectLayer::loadWeight(std::ifstream& ifs)
     }
 }
 
+void FullConnectLayer::flush()
+{
+    if(!diffWeight.empty()) {
+        for(int i = 0; static_cast<size_t>(i) < weight.size(); i++) {
+            weight.at(i) += diffWeight.at(i);
+            assert(std::isfinite(weight.at(i)));
+        }
+
+        bias += diffBias;
+        assert(std::isfinite(bias));
+
+        diffWeight.clear();
+        diffBias = 0;
+    }
+}
 
 
 /* ======================

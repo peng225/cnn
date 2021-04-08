@@ -27,6 +27,7 @@ public:
     virtual void saveWeight(std::ofstream& ofs) const{};
     virtual void loadWeight(std::ifstream& ifs){};
     void setVerboseMode(bool mode){verbose = mode;};
+    virtual void flush(){};
 
 protected:
     DataSize inputSize;
@@ -52,10 +53,13 @@ public:
     void dumpWeight() const;
     void saveWeight(std::ofstream& ofs) const override;
     void loadWeight(std::ifstream& ifs) override;
+    void flush() override;
 
 private:
     std::vector<float> weight;
     std::vector<float> bias;
+    std::vector<float> diffWeight;
+    std::vector<float> diffBias;
     int zeroPad;
     int windowSize;
 };
@@ -108,10 +112,13 @@ public:
                 double reduceRate = 1.0) override;
     void saveWeight(std::ofstream& ofs) const override;
     void loadWeight(std::ifstream& ifs) override;
+    void flush() override;
 
 private:
     std::vector<float> weight;
     float bias;
+    std::vector<float> diffWeight;
+    float diffBias;
 };
 
 class SoftmaxLayer : public Layer
