@@ -621,20 +621,16 @@ std::vector<float> SoftmaxLayer::softmax(const std::vector<float>& input) const
     assert(2 <= input.size());
     auto output = input;
     float expSum = 0;
-//    float maxValue = *std::max_element(output.begin(), output.end());
 
-//    for(auto& elem : output){
-//        elem /= maxValue;
-//        std::cout << elem << ",";
-//    }
-//    std::cout << std::endl;
-
+    auto max = *std::max_element(std::begin(output), std::end(output));
     for(auto elem : output){
-        expSum += exp(elem);
+        assert(elem - max <= 0.0);
+        expSum += exp(elem - max);
     }
 
     for(auto& elem : output){
-        elem = exp(elem) / expSum;
+        elem = exp(elem - max) / expSum;
+        assert(std::isfinite(elem));
     }
     return output;
 }
