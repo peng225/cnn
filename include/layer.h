@@ -146,14 +146,20 @@ private:
 class StandardizeLayer : public Layer
 {
 public:
+    StandardizeLayer(int nb);
     void calcOutputSize() override;
     std::vector<float> apply(const std::vector<float>& input) const override;
     std::vector<float> updateWeight(const std::vector<float>& input,
                 const std::vector<float>& output,
                 const std::vector<float>& propError,
                 double reduceRate = 1.0) override;
-    std::vector<float> standardize(const std::vector<float>& input) const;
-    float getMean(const std::vector<float>& input) const;
-    float getStddev(const std::vector<float>& input, float mean) const;
+    void standardize(std::vector<float>::iterator leftItr,
+        std::vector<float>::iterator rightItr) const;
+    float getMean(std::vector<float>::const_iterator leftItr,
+        std::vector<float>::const_iterator rightItr) const;
+    float getStddev(std::vector<float>::const_iterator leftItr,
+        std::vector<float>::const_iterator rightItr, float mean) const;
+private:
+    int numBatch;
 };
 

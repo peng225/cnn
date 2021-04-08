@@ -677,16 +677,31 @@ std::vector<float> SigmoidLayer::sigmoid(const std::vector<float>& input) const
 /* ======================
     StandardizeLayer
    ======================*/
+StandardizeLayer::StandardizeLayer(int nb) : numBatch(nb)
+{
+}
+
 void StandardizeLayer::calcOutputSize()
 {
     outputSize = inputSize;
     numOutputChannel = numInputChannel;
+    assert(numInputChannel % numBatch == 0);
 }
 
 std::vector<float> StandardizeLayer::apply(const std::vector<float>& input) const
 {
     assert(input.size() == static_cast<size_t>(inputSize.first * inputSize.second * numInputChannel));
-    return standardize(input);
+    auto output = input;
+    auto leftItr = std::begin(output);
+    auto rightItr = std::begin(output);
+    advance(rightItr, numBatch * inputSize.first * inputSize.second);
+    for(int i = 0; i < numInputChannel/numBatch; i++) {
+        standardize(leftItr, rightItr);
+        leftItr = rightItr;
+        advance(rightItr, numBatch * inputSize.first * inputSize.second);
+    }
+    assert(leftItr == std::end(output));
+    return output;
 }
 
 std::vector<float> StandardizeLayer::updateWeight(const std::vector<float>& input,
@@ -695,44 +710,68 @@ std::vector<float> StandardizeLayer::updateWeight(const std::vector<float>& inpu
                 double reduceRate)
 {
     assert(!propError.empty());
+    assert(propError.size() == input.size());
+    assert(propError.size() == output.size());
     /* Next propError */
-    std::vector<float> nextPropError(input.size());
-    auto stddev = getStddev(input, getMean(input));
+    std::vector<float> nextPropError;
     nextPropError = propError;
-    for(auto& elem : nextPropError) {
-        elem /= stddev;
+
+    auto leftItr = std::begin(nextPropError);
+    auto rightItr = std::begin(nextPropError);
+    advance(rightItr, numBatch * inputSize.first * inputSize.second);
+    auto inputLeftItr = std::begin(input);
+    auto inputRightItr = std::begin(input);
+    advance(inputRightItr, numBatch * inputSize.first * inputSize.second);
+    for(int i = 0; i < numInputChannel/numBatch; i++) {
+        auto stddev = getStddev(inputLeftItr, inputRightItr,
+                        getMean(inputLeftItr, inputRightItr));
+        for(auto itr = leftItr; itr != rightItr; itr++) {
+            *itr /= stddev;
+            assert(std::isfinite(*itr));
+        }
+        leftItr = rightItr;
+        advance(rightItr, numBatch * inputSize.first * inputSize.second);
+        inputLeftItr = inputRightItr;
+        advance(inputRightItr, numBatch * inputSize.first * inputSize.second);
     }
+    assert(leftItr == std::end(nextPropError));
+    assert(inputLeftItr == std::end(input));
     return nextPropError;
 }
 
-std::vector<float> StandardizeLayer::standardize(const std::vector<float>& input) const
+void StandardizeLayer::standardize(std::vector<float>::iterator leftItr,
+        std::vector<float>::iterator rightItr) const
 {
-    auto output = input;
-    auto mean = getMean(input);
-    auto stddev = getStddev(input, mean);
-    for(auto& elem : output) {
-        elem = (elem - mean)/stddev;
+    auto mean = getMean(leftItr, rightItr);
+    auto stddev = getStddev(leftItr, rightItr, mean);
+    for(auto itr = leftItr; itr != rightItr; itr++) {
+        *itr = (*itr - mean)/stddev;
+        assert(std::isfinite(*itr));
     }
-    return output;
 }
 
-float StandardizeLayer::getMean(const std::vector<float>& input) const
+float StandardizeLayer::getMean(
+        std::vector<float>::const_iterator leftItr,
+        std::vector<float>::const_iterator rightItr) const
 {
     float mean = 0;
-    for(auto elem : input) {
-        mean += elem;
+    for(auto itr = leftItr; itr != rightItr; itr++) {
+        mean += *itr;
     }
-    return mean / input.size();
+    return mean / distance(leftItr, rightItr);
 }
 
-float StandardizeLayer::getStddev(const std::vector<float>& input,
-                                    float mean) const
+float StandardizeLayer::getStddev(
+        std::vector<float>::const_iterator leftItr,
+        std::vector<float>::const_iterator rightItr, float mean) const
 {
-    assert(input.size() > 1);
+    assert(distance(leftItr, rightItr) > 1);
     float stddev = 0;
-    for(auto elem : input) {
-        stddev += (elem - mean) * (elem - mean);
+    for(auto itr = leftItr; itr != rightItr; itr++) {
+        stddev += (*itr - mean) * (*itr - mean);
     }
-    return sqrt(stddev / (input.size() - 1));
+    assert(stddev >= 0);
+    return stddev <= 1e-10 ?
+        1e-10 : sqrt(stddev / (distance(leftItr, rightItr) - 1));
 }
 
