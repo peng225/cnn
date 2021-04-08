@@ -407,12 +407,12 @@ std::vector<float> PoolingLayer::updateWeight(const std::vector<float>& input,
     for(int channel = 0; channel < numInputChannel; channel++){
         for(int outY = 0; outY < outputSize.second; outY++){
             for(int outX = 0; outX < outputSize.first; outX++){
+                auto outVal = getValFromVecMap(output, outX, outY,
+                                outputSize.first, outputSize.second, channel);
                 for(int winY = 0; winY < windowSize; winY++){
                     if(winY - zeroPad + outY < 0 || inputSize.second <= winY - zeroPad + outY){
                         continue;
                     }
-                    auto outVal = getValFromVecMap(output, outX, outY,
-                                    outputSize.first, outputSize.second, channel);
                     for(int winX = 0; winX < windowSize; winX++){
                         if(winX - zeroPad + outX < 0 || inputSize.first <= winX - zeroPad + outX){
                             continue;
