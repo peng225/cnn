@@ -37,3 +37,11 @@ protected:
 
 };
 
+class SoftmaxLayerTest : public ::testing::Test
+{
+};
+
+class StandardizeLayerTest : public ::testing::Test
+{
+};
+
