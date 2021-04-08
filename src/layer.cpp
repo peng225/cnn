@@ -139,7 +139,6 @@ void ConvolutionLayer::initWeight()
     for(auto& elem : bias){
         elem = rd(mt);
     }
-    normalize(weight, bias);
 }
 
 std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& input,
@@ -186,6 +185,8 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
 
     for(int i = 0; i < windowSize * windowSize * numInputChannel * numOutputChannel; i++){
         weight.at(i) -= reduceRate * GAMMA * dEdw.at(i);
+        weight.at(i) -= LAMBDA * reduceRate * GAMMA * weight.at(i);
+        assert(std::isfinite(weight.at(i)));
     }
 
     if(verbose) {
@@ -205,8 +206,9 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
             dEdb.at(outCh) += pe;
         }
         bias.at(outCh) -= reduceRate * GAMMA * dEdb.at(outCh);
+        bias.at(outCh) -= LAMBDA * reduceRate * GAMMA * bias.at(outCh);
+        assert(std::isfinite(bias.at(outCh)));
     }
-    normalize(weight, bias);
     if(verbose) {
         std::cout << "Conv layer after bias:" << std::endl;
         printVector(bias);
@@ -477,7 +479,6 @@ void FullConnectLayer::initWeight()
         elem = rd(mt);
     }
     bias = rd(mt);
-    normalize(weight, bias);
 }
 
 std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& input,
@@ -505,6 +506,8 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
     }
     for(int i = 0; static_cast<size_t>(i) < input.size() * output.size(); i++){
         weight.at(i) -= reduceRate * GAMMA * dEdw.at(i);
+        weight.at(i) -= LAMBDA * reduceRate * GAMMA * weight.at(i);
+        assert(std::isfinite(weight.at(i)));
     }
 
 
@@ -517,7 +520,8 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
         dEdb += elem;
     }
     bias -= reduceRate * GAMMA * dEdb;
-    normalize(weight, bias);
+    bias -= LAMBDA * reduceRate * GAMMA * bias;
+    assert(std::isfinite(bias));
     if(verbose) {
         std::cout << "FC layer after weight:" << std::endl;
         printVector(weight);
