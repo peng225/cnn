@@ -606,12 +606,12 @@ std::vector<float> SoftmaxLayer::updateWeight(const std::vector<float>& input,
     assert(input.size() == output.size());
     /* Next propError */
     std::vector<float> nextPropError(input.size());
-    for(int out = 0; static_cast<size_t>(out) < output.size(); out++){
-        /* 出力層は最後に置かれること、またDeepNetwork::backPropagate関数にてpropErrorが
-           (出力-教師データ)で初期化されることに依存している
-           TODO: この依存関係はなくしたほうがよい？
-        */
-        nextPropError.at(out) = propError.at(out);
+    for(int in = 0; static_cast<size_t>(in) < input.size(); in++){
+        nextPropError.at(in) = propError.at(in);
+        for(int out = 0; static_cast<size_t>(out) < output.size(); out++){
+            nextPropError.at(in) -= propError.at(out) * output.at(out);
+        }
+        nextPropError.at(in) *= output.at(in);
     }
     return nextPropError;
 }
