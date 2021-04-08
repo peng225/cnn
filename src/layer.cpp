@@ -55,6 +55,11 @@ void setValToVecMap(std::vector<float>& vec, int x, int y, int width, int height
     vec[x + y * width + (width * height) * channel] = val;
 }
 
+void addValToVecMap(std::vector<float>& vec, int x, int y, int width, int height, int channel, float val)
+{
+    vec[x + y * width + (width * height) * channel] += val;
+}
+
 
 /* ======================
     Layer
@@ -110,16 +115,14 @@ std::vector<float> ConvolutionLayer::apply(const std::vector<float>& input) cons
                             convVal += w * inVal;
                         }
                     }
-                    float currentOutVal = getValFromVecMap(output, outX, outY, outputSize.first, outputSize.second, outCh);
-                    setValToVecMap(output, outX, outY, outputSize.first, outputSize.second, outCh, currentOutVal + convVal);
+                    addValToVecMap(output, outX, outY, outputSize.first, outputSize.second, outCh, convVal);
                 }
             }
         }
         // Add bias to all entries
         for(int outY = 0; outY < outputSize.second; outY++){
             for(int outX = 0; outX < outputSize.first; outX++){
-                float currentOutVal = getValFromVecMap(output, outX, outY, outputSize.first, outputSize.second, outCh);
-                setValToVecMap(output, outX, outY, outputSize.first, outputSize.second, outCh, currentOutVal + bias[outCh]);
+                addValToVecMap(output, outX, outY, outputSize.first, outputSize.second, outCh, bias[outCh]);
             }
         }
     }
