@@ -101,14 +101,10 @@ std::vector<float> ConvolutionLayer::apply(const std::vector<float>& input) cons
             for(int outY = 0; outY < outputSize.second; outY++){
                 for(int outX = 0; outX < outputSize.first; outX++){
                     float convVal = 0;
-                    for(int winY = 0; winY < windowSize; winY++){
-                        if(winY - zeroPad + outY < 0 || inputSize.second <= winY - zeroPad + outY){
-                            continue;
-                        }
-                        for(int winX = 0; winX < windowSize; winX++){
-                            if(winX - zeroPad + outX < 0 || inputSize.first <= winX - zeroPad + outX){
-                                continue;
-                            }
+                    int numWinYLoop = std::min(windowSize, inputSize.second + zeroPad - outY);
+                    for(int winY = std::max(0, zeroPad - outY); winY < numWinYLoop; winY++){
+                        int numWinXLoop = std::min(windowSize, inputSize.first + zeroPad - outX);
+                        for(int winX = std::max(0, zeroPad - outX); winX < numWinXLoop; winX++){
                             auto w = getValFromVecMap(weight, winX, winY, windowSize, windowSize, inCh + numInputChannel * outCh);
                             auto inVal = getValFromVecMap(input, winX - zeroPad + outX, winY - zeroPad + outY, 
                                             inputSize.first, inputSize.second, inCh);
@@ -150,6 +146,7 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
                 double reduceRate)
 {
     assert(!propError.empty());
+    assert(propError.size() == output.size());
     /* Update weight */
     std::vector<float> dEdw(windowSize * windowSize * numInputChannel * numOutputChannel);
     for(int outCh = 0; outCh < numOutputChannel; outCh++){
@@ -157,14 +154,10 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
             for(int winY = 0; winY < windowSize; winY++){
                 for(int winX = 0; winX < windowSize; winX++){
                     float sumVal = 0;
-                    for(int outY = 0; outY < outputSize.second; outY++){
-                        if(winY - zeroPad + outY < 0 || inputSize.second <= winY - zeroPad + outY){
-                            continue;
-                        }
-                        for(int outX = 0; outX < outputSize.first; outX++){
-                            if(winX - zeroPad + outX < 0 || inputSize.second <= winX - zeroPad + outX){
-                                continue;
-                            }
+                    int numOutYLoop = std::min(outputSize.second, inputSize.second + zeroPad - winY);
+                    for(int outY = std::max(0, zeroPad - winY); outY < numOutYLoop; outY++){
+                        int numOutXLoop = std::min(outputSize.first, inputSize.first + zeroPad - winX);
+                        for(int outX = std::max(0, zeroPad - winX); outX < numOutXLoop; outX++){
                             auto pe = getValFromVecMap(propError, outX, outY,
                                         outputSize.first, outputSize.second, outCh);
                             auto inVal = getValFromVecMap(input, winX - zeroPad + outX, winY -zeroPad + outY,
@@ -226,14 +219,10 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
             for(int inX = 0; inX < inputSize.first; inX++){
                 float sumVal = 0;
                 for(int outCh = 0; outCh < numOutputChannel; outCh++){
-                    for(int winY = 0; winY < windowSize; winY++){
-                        if(inY - winY + zeroPad < 0 || outputSize.second <= inY - winY + zeroPad){
-                            continue;
-                        }
-                        for(int winX = 0; winX < windowSize; winX++){
-                            if(inX - winX + zeroPad < 0 || outputSize.first <= inX - winX + zeroPad){
-                                continue;
-                            }
+                    int numWinYLoop = std::min(windowSize, inY + zeroPad + 1);
+                    for(int winY = std::max(0, inY + zeroPad - outputSize.second + 1); winY < numWinYLoop; winY++){
+                        int numWinXLoop = std::min(windowSize, inX + zeroPad + 1);
+                        for(int winX = std::max(0, inX + zeroPad - outputSize.first + 1); winX < numWinXLoop; winX++){
                             auto pe = getValFromVecMap(propError,
                                         inX - winX + zeroPad, inY - winY + zeroPad,
                                         outputSize.first, outputSize.second, outCh);
@@ -394,14 +383,10 @@ std::vector<float> PoolingLayer::apply(const std::vector<float>& input) const
         for(int outY = 0; outY < outputSize.second; outY++){
             for(int outX = 0; outX < outputSize.first; outX++){
                 float maxVal = 0;
-                for(int winY = 0; winY < windowSize; winY++){
-                    if(winY - zeroPad + outY < 0 || inputSize.second <= winY - zeroPad + outY){
-                        continue;
-                    }
-                    for(int winX = 0; winX < windowSize; winX++){
-                        if(winX - zeroPad + outX < 0 || inputSize.first <= winX - zeroPad + outX){
-                            continue;
-                        }
+                int numWinYLoop = std::min(windowSize, inputSize.second + zeroPad - outY);
+                for(int winY = std::max(0, zeroPad - outY); winY < numWinYLoop; winY++){
+                    int numWinXLoop = std::min(windowSize, inputSize.first + zeroPad - outX);
+                    for(int winX = std::max(0, zeroPad - outX); winX < numWinXLoop; winX++){
                         auto inVal = getValFromVecMap(input, winX - zeroPad + outX, winY - zeroPad + outY, 
                                         inputSize.first, inputSize.second, channel);
                         if(maxVal <= inVal){
@@ -431,23 +416,17 @@ std::vector<float> PoolingLayer::updateWeight(const std::vector<float>& input,
             for(int outX = 0; outX < outputSize.first; outX++){
                 auto outVal = getValFromVecMap(output, outX, outY,
                                 outputSize.first, outputSize.second, channel);
-                for(int winY = 0; winY < windowSize; winY++){
-                    if(winY - zeroPad + outY < 0 || inputSize.second <= winY - zeroPad + outY){
-                        continue;
-                    }
-                    for(int winX = 0; winX < windowSize; winX++){
-                        if(winX - zeroPad + outX < 0 || inputSize.first <= winX - zeroPad + outX){
-                            continue;
-                        }
+                int numWinYLoop = std::min(windowSize, inputSize.second + zeroPad - outY);
+                for(int winY = std::max(0, zeroPad - outY); winY < numWinYLoop; winY++){
+                    int numWinXLoop = std::min(windowSize, inputSize.first + zeroPad - outX);
+                    for(int winX = std::max(0, zeroPad - outX); winX < numWinXLoop; winX++){
                         auto inVal = getValFromVecMap(input, winX - zeroPad + outX, winY - zeroPad + outY,
                                         inputSize.first, inputSize.second, channel);
                         if(inVal == outVal){
                             auto pe = getValFromVecMap(propError, outX, outY,
                                         outputSize.first, outputSize.second, channel); 
-                            auto currentNpe = getValFromVecMap(nextPropError, winX - zeroPad + outX, winY - zeroPad + outY,
-                                        inputSize.first, inputSize.second, channel); 
-                            setValToVecMap(nextPropError, winX - zeroPad + outX, winY - zeroPad + outY,
-                                        inputSize.first, inputSize.second, channel, pe + currentNpe);
+                            addValToVecMap(nextPropError, winX - zeroPad + outX, winY - zeroPad + outY,
+                                        inputSize.first, inputSize.second, channel, pe);
                         }
                     }
                 }
