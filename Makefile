@@ -1,10 +1,10 @@
 # Makefile
 
 
-CFLAGS = -c -g -O3 -Wall -std=c++14 -flto -MMD -MP
+CFLAGS = -c -g -O3 -Wall -std=c++17 -flto -MMD -MP
 FINAL_CFLAGS = rcs
-# CFLAGS = -c -g -O0 -Wall -std=c++14 -flto -MMD -MP
-# FINAL_CFLAGS = -g -O0 -Wall -std=c++14 -flto
+# CFLAGS = -c -g -O0 -Wall -std=c++17 -flto -MMD -MP
+# FINAL_CFLAGS = -g -O0 -Wall -std=c++17 -flto
 LDLIBS = 
 
 TARGET = libcnn.a
@@ -20,8 +20,8 @@ DEPS = $(OBJS:.o=.d)
 INCLUDE = -I $(INC_DIR)
 
 # for test
-TEST_CFLAGS = -c -g -O0 -Wall -std=c++14 -MMD -MP
-TEST_FINAL_CFLAGS = -g -O0 -Wall -std=c++14
+TEST_CFLAGS = -c -g -O0 -Wall -std=c++17 -MMD -MP
+TEST_FINAL_CFLAGS = -g -O0 -Wall -std=c++17
 TEST_LDLIBS = libgtest.a -lpthread -pthread
 
 TEST_TARGET = unittest
