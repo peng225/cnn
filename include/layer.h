@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <fstream>
+#include <mutex>
 
 typedef std::pair<int, int> DataSize;
 
@@ -62,6 +63,10 @@ private:
     std::vector<float> diffBias;
     int zeroPad;
     int windowSize;
+    // weight, bias両方のロックを取る場合、
+    // weight -> biasの順に取ること
+    std::mutex mtxDiffWeight;
+    std::mutex mtxDiffBias;
 };
 
 class ReLULayer : public Layer
@@ -119,6 +124,10 @@ private:
     float bias;
     std::vector<float> diffWeight;
     float diffBias;
+    // weight, bias両方のロックを取る場合、
+    // weight -> biasの順に取ること
+    std::mutex mtxDiffWeight;
+    std::mutex mtxDiffBias;
 };
 
 class SoftmaxLayer : public Layer

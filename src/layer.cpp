@@ -147,6 +147,8 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
 {
     assert(!propError.empty());
     assert(propError.size() == output.size());
+    std::unique_lock<std::mutex> lkWeight(mtxDiffWeight);
+    std::unique_lock<std::mutex> lkBias(mtxDiffBias);
     /* Update weight */
     std::vector<float> dEdw(windowSize * windowSize * numInputChannel * numOutputChannel);
     for(int outCh = 0; outCh < numOutputChannel; outCh++){
@@ -312,6 +314,8 @@ void ConvolutionLayer::loadWeight(std::ifstream& ifs)
 
 void ConvolutionLayer::flush()
 {
+    std::unique_lock<std::mutex> lkWeight(mtxDiffWeight);
+    std::unique_lock<std::mutex> lkBias(mtxDiffBias);
     assert((diffWeight.empty() && diffBias.empty())
         || (!diffWeight.empty() && !diffBias.empty()));
     if(!diffWeight.empty()) {
@@ -491,6 +495,8 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
                 double reduceRate)
 {
     assert(!propError.empty());
+    std::unique_lock<std::mutex> lkWeight(mtxDiffWeight);
+    std::unique_lock<std::mutex> lkBias(mtxDiffBias);
     /* Update weight */
     std::vector<float> dEdw(input.size() * output.size());
     for(int out = 0; static_cast<size_t>(out) < output.size(); out++){
@@ -515,7 +521,6 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
         diffWeight.at(i) -= reduceRate * GAMMA * dEdw.at(i);
         diffWeight.at(i) -= LAMBDA * reduceRate * GAMMA * weight.at(i);
     }
-
 
     /* Update bias */
     if(verbose) {
@@ -582,6 +587,8 @@ void FullConnectLayer::loadWeight(std::ifstream& ifs)
 
 void FullConnectLayer::flush()
 {
+    std::unique_lock<std::mutex> lkWeight(mtxDiffWeight);
+    std::unique_lock<std::mutex> lkBias(mtxDiffBias);
     if(!diffWeight.empty()) {
         for(int i = 0; static_cast<size_t>(i) < weight.size(); i++) {
             weight.at(i) += diffWeight.at(i);
