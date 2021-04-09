@@ -1,13 +1,13 @@
 # Makefile
 
 
-# CFLAGS = -c -g -O3 -Wall -std=c++14 -flto -MMD -MP
-# FINAL_CFLAGS = -g -O3 -Wall -std=c++14 -flto
-CFLAGS = -c -g -O0 -Wall -std=c++14 -flto -MMD -MP
-FINAL_CFLAGS = -g -O0 -Wall -std=c++14 -flto
+CFLAGS = -c -g -O3 -Wall -std=c++14 -flto -MMD -MP
+FINAL_CFLAGS = rcs
+# CFLAGS = -c -g -O0 -Wall -std=c++14 -flto -MMD -MP
+# FINAL_CFLAGS = -g -O0 -Wall -std=c++14 -flto
 LDLIBS = 
 
-TARGET = main
+TARGET = libcnn.a
 
 SRC_DIR = ./src
 INC_DIR = ./include
@@ -20,9 +20,9 @@ DEPS = $(OBJS:.o=.d)
 INCLUDE = -I $(INC_DIR)
 
 # for test
-TEST_CFLAGS = -c -g -Wall -std=c++14 -MMD -MP
-TEST_FINAL_CFLAGS = -g -Wall -std=c++14
-TEST_LDLIBS = gtest_main.a -lpthread -pthread
+TEST_CFLAGS = -c -g -O0 -Wall -std=c++14 -MMD -MP
+TEST_FINAL_CFLAGS = -g -O0 -Wall -std=c++14
+TEST_LDLIBS = libgtest.a -lpthread -pthread
 
 TEST_TARGET = unittest
 
@@ -35,20 +35,21 @@ TEST_OBJS = $(subst $(TEST_SRC_DIR), $(TEST_OBJ_DIR), $(TEST_SRCS:.cpp=.o))
 TEST_DEPS = $(TEST_OBJS:.o=.d)
 
 # テスト対象のオブジェクトファイルからmain関数を含むものを除く
-MAIN_SRC = main.cpp
-SRCS_WITHOUT_MAIN = $(shell find $(SRC_DIR) -name $(MAIN_SRC) -prune -o -name *.cpp -print)
-OBJS_WITHOUT_MAIN = $(subst $(SRC_DIR), $(OBJ_DIR), $(SRCS_WITHOUT_MAIN:.cpp=.o))
+# MAIN_SRC = main.cpp
+# SRCS_WITHOUT_MAIN = $(shell find $(SRC_DIR) -name $(MAIN_SRC) -prune -o -name *.cpp -print)
+# OBJS_WITHOUT_MAIN = $(subst $(SRC_DIR), $(OBJ_DIR), $(SRCS_WITHOUT_MAIN:.cpp=.o))
 
 TEST_INCLUDE = -I $(TEST_INC_DIR)
 
 CC = g++
+AR = ar
 
 all: $(TARGET)
 
 -include $(DEPS)
 
 $(TARGET): $(OBJS)
-	$(CC) $(INCLUDE) -o $@ $^ $(FINAL_CFLAGS) $(LDLIBS)
+	$(AR) $(FINAL_CFLAGS) $@ $^
 
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
@@ -63,9 +64,9 @@ test: $(TEST_TARGET)
 echo:
 	# echo $(TEST_SRCS)
 	# echo $(TEST_OBJS)
-	echo $(OBJS_WITHOUT_MAIN)
+	echo $(OBJS)
 
-$(TEST_TARGET): $(TEST_OBJS) $(OBJS_WITHOUT_MAIN)
+$(TEST_TARGET): $(TEST_OBJS) $(OBJS)
 	$(CC) $(TEST_INCLUDE) $(INCLUDE) -o $@ $^ $(TEST_FINAL_CFLAGS) $(TEST_LDLIBS)
 
 
