@@ -607,6 +607,11 @@ void FullConnectLayer::flush()
 /* ======================
     SoftmaxLayer
    ======================*/
+SoftmaxLayer::SoftmaxLayer(const std::vector<uint32_t>& sp)
+    : split(sp)
+{
+}
+
 void SoftmaxLayer::calcOutputSize()
 {
     outputSize = inputSize;
@@ -618,7 +623,24 @@ void SoftmaxLayer::calcOutputSize()
 std::vector<float> SoftmaxLayer::apply(const std::vector<float>& input) const
 {
     assert(input.size() == static_cast<size_t>(inputSize.first * inputSize.second * numInputChannel));
-    return softmax(input);
+    assert(split.empty() ||
+        input.size()
+            == std::accumulate(std::begin(split), std::end(split), 0UL));
+
+    auto output = input;
+    if(split.empty()) {
+        softmax(std::begin(output), std::end(output));
+    } else {
+        auto leftItr = std::begin(output);
+        auto rightItr = leftItr;
+        for(auto sp : split) {
+            leftItr = rightItr;
+            std::advance(rightItr, sp);
+            softmax(leftItr, rightItr);
+        }
+        assert(rightItr == std::end(output));
+    }
+    return output;
 }
 
 std::vector<float> SoftmaxLayer::updateWeight(const std::vector<float>& input,
@@ -630,33 +652,54 @@ std::vector<float> SoftmaxLayer::updateWeight(const std::vector<float>& input,
     assert(input.size() == output.size());
     /* Next propError */
     std::vector<float> nextPropError(input.size());
-    for(int in = 0; static_cast<size_t>(in) < input.size(); in++){
-        nextPropError.at(in) = propError.at(in);
-        for(int out = 0; static_cast<size_t>(out) < output.size(); out++){
-            nextPropError.at(in) -= propError.at(out) * output.at(out);
+    if(split.empty()) {
+        updateWeightHelper(0, input.size(), output, propError,
+            nextPropError);
+    } else {
+        uint32_t beginIdx = 0;
+        uint32_t endIdx = 0;
+        for(auto sp : split) {
+            beginIdx = endIdx;
+            endIdx += sp;
+            updateWeightHelper(beginIdx, endIdx, output, propError,
+                nextPropError);
         }
-        nextPropError.at(in) *= output.at(in);
+        assert(endIdx == input.size());
     }
     return nextPropError;
 }
 
-std::vector<float> SoftmaxLayer::softmax(const std::vector<float>& input) const
+void SoftmaxLayer::updateWeightHelper(uint32_t beginIdx, uint32_t endIdx,
+                const std::vector<float>& output,
+                const std::vector<float>& propError,
+                std::vector<float>& nextPropError) const
 {
-    assert(2 <= input.size());
-    auto output = input;
+    for(auto in = beginIdx; in < endIdx; in++){
+        nextPropError.at(in) = propError.at(in);
+        for(auto out = beginIdx; out < endIdx; out++){
+            nextPropError.at(in) -= propError.at(out) * output.at(out);
+        }
+        nextPropError.at(in) *= output.at(in);
+    }
+}
+
+void SoftmaxLayer::softmax(
+        std::vector<float>::iterator leftItr,
+        std::vector<float>::iterator rightItr) const
+{
+    assert(2 <= std::distance(leftItr, rightItr));
     float expSum = 0;
 
-    auto max = *std::max_element(std::begin(output), std::end(output));
-    for(auto elem : output){
-        assert(elem - max <= 0.0);
-        expSum += exp(elem - max);
+    auto max = *std::max_element(leftItr, rightItr);
+    for(auto itr = leftItr; itr != rightItr; itr++){
+        assert(*itr - max <= 0.0);
+        expSum += exp(*itr - max);
     }
 
-    for(auto& elem : output){
-        elem = exp(elem - max) / expSum;
-        assert(std::isfinite(elem));
+    for(auto itr = leftItr; itr != rightItr; itr++){
+        *itr = exp(*itr - max) / expSum;
+        assert(std::isfinite(*itr));
     }
-    return output;
 }
 
 /* ======================

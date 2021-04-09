@@ -133,6 +133,8 @@ private:
 class SoftmaxLayer : public Layer
 {
 public:
+    SoftmaxLayer(){};
+    SoftmaxLayer(const std::vector<uint32_t>& sp);
     void calcOutputSize() override;
     std::vector<float> apply(const std::vector<float>& input) const override;
     std::vector<float> updateWeight(const std::vector<float>& input,
@@ -141,7 +143,13 @@ public:
                 double reduceRate = 1.0) override;
 
 private:
-    std::vector<float> softmax(const std::vector<float>& input) const;
+    std::vector<uint32_t> split;
+    void updateWeightHelper(uint32_t beginIdx, uint32_t endIdx,
+                const std::vector<float>& output,
+                const std::vector<float>& propError,
+                std::vector<float>& nextPropError) const;
+    void softmax(std::vector<float>::iterator leftItr,
+                 std::vector<float>::iterator rightItr) const;
 
 };
 
