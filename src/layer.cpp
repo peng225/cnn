@@ -466,7 +466,7 @@ std::vector<float> FullConnectLayer::apply(const std::vector<float>& input) cons
     assert(outputSize.second == 1);
     assert(numOutputChannel == 1);
 
-    for(int out = 0; out < outputSize.first; out++){
+    for(int out = 0; out < outputSize.first * outputSize.second; out++){
         float sumVal = 0;
         for(int channel = 0; channel < numInputChannel; channel++){
             for(int in = 0; in < inputSize.first * inputSize.second; in++){
