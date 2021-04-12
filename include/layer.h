@@ -6,7 +6,7 @@
 
 typedef std::pair<int, int> DataSize;
 
-const float GAMMA = 0.02;  // 学習率
+const float GAMMA = 0.05;  // 学習率
 const float LAMBDA = 0.001;  // L2正則化の係数
 
 class ConvolutionLayerTest;

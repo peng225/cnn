@@ -5,6 +5,7 @@
 #include <random>
 #include <cmath>
 #include <algorithm>
+bool hogeFlag = 0;
 
 /* ======================
     Utility functions
@@ -214,6 +215,23 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
     if(verbose) {
         std::cout << "Conv layer after bias:" << std::endl;
         printVector(bias);
+    }
+    static int count = 0;
+    if(count == 1000) {
+        count = 0;
+        double norm = 0;
+        for(auto w : weight) {
+            norm += w * w;
+        }
+        for(auto b : bias) {
+            norm += b * b;
+        }
+        norm = sqrt(norm);
+        if(norm < 0.1) {
+            std::cout << "Too small Conv norm: " << norm << std::endl;
+        }
+    } else {
+        count++;
     }
 
     /* Next propError */
@@ -544,6 +562,21 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
         std::cout << "FC layer after bias: " << bias << std::endl;
     }
 
+    static int count = 0;
+    if(count == 1000) {
+        count = 0;
+        double norm = 0;
+        for(auto w : weight) {
+            norm += w * w;
+        }
+        norm += bias * bias;
+        norm = sqrt(norm);
+        if(norm < 0.1) {
+            std::cout << "Too small FC norm: " << norm << std::endl;
+        }
+    } else {
+        count++;
+    }
 
     /* Next propError */
     std::vector<float> nextPropError(input.size());
@@ -634,6 +667,10 @@ std::vector<float> SoftmaxLayer::apply(const std::vector<float>& input) const
     assert(split.empty() ||
         input.size()
             == std::accumulate(std::begin(split), std::end(split), 0UL));
+    if(hogeFlag) {
+    std::cout << "softmax input" << std::endl;
+    printVector(input);
+    }
 
     auto output = input;
     if(split.empty()) {
@@ -744,10 +781,18 @@ std::vector<float> SigmoidLayer::updateWeight(const std::vector<float>& input,
 
 std::vector<float> SigmoidLayer::sigmoid(const std::vector<float>& input) const
 {
+    if(hogeFlag) {
+    std::cout << "sigmoid input" << std::endl;
+    printVector(input);
+    }
     auto output = input;
 
     for(auto& elem : output){
         elem = 1 / (1 + exp(-elem));
+    }
+    if(hogeFlag) {
+    std::cout << "sigmoid output" << std::endl;
+    printVector(output);
     }
     return output;
 }
