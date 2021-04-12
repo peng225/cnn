@@ -2,6 +2,7 @@
 #include <vector>
 #include <fstream>
 #include <mutex>
+#include <shared_mutex>
 
 typedef std::pair<int, int> DataSize;
 
@@ -65,6 +66,8 @@ private:
     int windowSize;
     // weight, bias両方のロックを取る場合、
     // weight -> biasの順に取ること
+    std::shared_mutex mtxWeight;
+    std::shared_mutex mtxBias;
     std::mutex mtxDiffWeight;
     std::mutex mtxDiffBias;
 };
@@ -126,6 +129,8 @@ private:
     float diffBias;
     // weight, bias両方のロックを取る場合、
     // weight -> biasの順に取ること
+    std::shared_mutex mtxWeight;
+    std::shared_mutex mtxBias;
     std::mutex mtxDiffWeight;
     std::mutex mtxDiffBias;
 };
