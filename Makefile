@@ -22,7 +22,7 @@ INCLUDE = -I $(INC_DIR)
 # for test
 TEST_CFLAGS = -c -g -O0 -Wall -std=c++17 -MMD -MP
 TEST_FINAL_CFLAGS = -g -O0 -Wall -std=c++17
-TEST_LDLIBS = libgtest.a -lpthread -pthread
+TEST_LDLIBS = -lpthread -pthread -lgtest_main -lgtest
 
 TEST_TARGET = unittest
 
