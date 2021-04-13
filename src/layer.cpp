@@ -147,8 +147,7 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
 {
     assert(!propError.empty());
     assert(propError.size() == output.size());
-    std::unique_lock<std::mutex> lkWeight(mtxDiffWeight);
-    std::unique_lock<std::mutex> lkBias(mtxDiffBias);
+    std::shared_lock<std::shared_mutex> lkWeight(mtxWeight);
     /* Update weight */
     std::vector<float> dEdw(windowSize * windowSize * numInputChannel * numOutputChannel);
     for(int outCh = 0; outCh < numOutputChannel; outCh++){
@@ -181,6 +180,8 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
         printVector(weight);
     }
 
+    std::lock_guard<std::mutex> lkDiffWeight(mtxDiffWeight);
+    std::lock_guard<std::mutex> lkDiffBias(mtxDiffBias);
     if(diffWeight.empty()) {
         diffWeight.resize(weight.size());
         diffBias.resize(bias.size());
@@ -196,6 +197,7 @@ std::vector<float> ConvolutionLayer::updateWeight(const std::vector<float>& inpu
     }
 
     /* Update bias */
+    std::shared_lock<std::shared_mutex> lkBias(mtxBias);
     if(verbose) {
         std::cout << "Conv layer before bias:" << std::endl;
         printVector(bias);
@@ -314,8 +316,10 @@ void ConvolutionLayer::loadWeight(std::ifstream& ifs)
 
 void ConvolutionLayer::flush()
 {
-    std::unique_lock<std::mutex> lkWeight(mtxDiffWeight);
-    std::unique_lock<std::mutex> lkBias(mtxDiffBias);
+    std::lock_guard<std::shared_mutex> lkWeight(mtxWeight);
+    std::lock_guard<std::shared_mutex> lkBias(mtxBias);
+    std::lock_guard<std::mutex> lkDiffWeight(mtxDiffWeight);
+    std::lock_guard<std::mutex> lkDiffBias(mtxDiffBias);
     assert((diffWeight.empty() && diffBias.empty())
         || (!diffWeight.empty() && !diffBias.empty()));
     if(!diffWeight.empty()) {
@@ -462,7 +466,7 @@ std::vector<float> FullConnectLayer::apply(const std::vector<float>& input) cons
     assert(outputSize.second == 1);
     assert(numOutputChannel == 1);
 
-    for(int out = 0; out < outputSize.first; out++){
+    for(int out = 0; out < outputSize.first * outputSize.second; out++){
         float sumVal = 0;
         for(int channel = 0; channel < numInputChannel; channel++){
             for(int in = 0; in < inputSize.first * inputSize.second; in++){
@@ -495,8 +499,7 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
                 double reduceRate)
 {
     assert(!propError.empty());
-    std::unique_lock<std::mutex> lkWeight(mtxDiffWeight);
-    std::unique_lock<std::mutex> lkBias(mtxDiffBias);
+    std::shared_lock<std::shared_mutex> lkWeight(mtxWeight);
     /* Update weight */
     std::vector<float> dEdw(input.size() * output.size());
     for(int out = 0; static_cast<size_t>(out) < output.size(); out++){
@@ -513,6 +516,8 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
         std::cout << "FC layer before weight:" << std::endl;
         printVector(weight);
     }
+    std::lock_guard<std::mutex> lkDiffWeight(mtxDiffWeight);
+    std::lock_guard<std::mutex> lkDiffBias(mtxDiffBias);
     if(diffWeight.empty()) {
         diffWeight.resize(weight.size());
         diffBias = 0;
@@ -523,6 +528,7 @@ std::vector<float> FullConnectLayer::updateWeight(const std::vector<float>& inpu
     }
 
     /* Update bias */
+    std::shared_lock<std::shared_mutex> lkBias(mtxBias);
     if(verbose) {
         std::cout << "FC layer before bias: " << bias << std::endl;
     }
@@ -587,8 +593,10 @@ void FullConnectLayer::loadWeight(std::ifstream& ifs)
 
 void FullConnectLayer::flush()
 {
-    std::unique_lock<std::mutex> lkWeight(mtxDiffWeight);
-    std::unique_lock<std::mutex> lkBias(mtxDiffBias);
+    std::lock_guard<std::shared_mutex> lkWeight(mtxWeight);
+    std::lock_guard<std::shared_mutex> lkBias(mtxBias);
+    std::lock_guard<std::mutex> lkDiffWeight(mtxDiffWeight);
+    std::lock_guard<std::mutex> lkDiffBias(mtxDiffBias);
     if(!diffWeight.empty()) {
         for(int i = 0; static_cast<size_t>(i) < weight.size(); i++) {
             weight.at(i) += diffWeight.at(i);

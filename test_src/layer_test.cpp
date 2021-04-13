@@ -2,6 +2,7 @@
 #include "utility.h"
 #include <fstream>
 #include <algorithm>
+#include <numeric>
 #include <cmath>
 
 TEST_F(ConvolutionLayerTest, apply_and_updateWeight_nozeropad)
@@ -290,16 +291,56 @@ TEST_F(SoftmaxLayerTest, apply_and_updateWeight)
     EXPECT_GT(output.at(1), output.at(5));
 
     std::vector<float> propError(output.size());
-    output = sml.apply(input);
     propError.at(1) = output.at(1);
     propError.at(3) = output.at(3);
-    propError.at(5) = output.at(1) - 1;
+    propError.at(5) = output.at(5) - 1;
     propError = sml.updateWeight(input, output, propError);
 
     EXPECT_GT(propError.at(1), 0);
     EXPECT_GT(propError.at(3), 0);
     EXPECT_LT(propError.at(5), 0);
 }
+
+TEST_F(SoftmaxLayerTest, apply_and_updateWeight_split2)
+{
+    std::vector<uint32_t> split = {3, 6};
+    SoftmaxLayer sml(split);
+    std::vector<float> input(9);
+    sml.setInputInfo(DataSize(3, 3), 1);
+    sml.calcOutputSize();
+    sml.initWeight();
+
+    input.at(1) = 0.5;
+    input.at(2) = 0.2;
+    input.at(3) = 0.2;
+    input.at(5) = 0.1;
+    input.at(6) = 0.4;
+
+    auto output = sml.apply(input);
+    EXPECT_GT(output.at(1), output.at(0));
+    EXPECT_GT(output.at(1), output.at(2));
+    EXPECT_GT(output.at(6), output.at(3));
+    EXPECT_GT(output.at(6), output.at(5));
+    auto itr = std::begin(output);
+    std::advance(itr, 3);
+    EXPECT_FLOAT_EQ(1.0, std::accumulate(std::begin(output), itr, 0.0));
+    EXPECT_FLOAT_EQ(1.0, std::accumulate(itr, std::end(output), 0.0));
+
+    std::vector<float> propError(output.size());
+    propError.at(1) = output.at(1);
+    propError.at(2) = output.at(2) - 1;
+    propError.at(3) = output.at(3);
+    propError.at(5) = output.at(5) - 1;
+    propError.at(6) = output.at(6);
+    propError = sml.updateWeight(input, output, propError);
+
+    EXPECT_GT(propError.at(1), 0);
+    EXPECT_LT(propError.at(2), 0);
+    EXPECT_GT(propError.at(3), 0);
+    EXPECT_LT(propError.at(5), 0);
+    EXPECT_GT(propError.at(6), 0);
+}
+
 
 /***********************************************/
 /* Layer Combination Test                      */
